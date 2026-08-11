@@ -81,6 +81,18 @@ func (s *JSONStore) UpdateHeartbeat(_ context.Context, id string, status Status,
 	return s.saveLocked()
 }
 
+// ListDevices returns all known devices.
+func (s *JSONStore) ListDevices(_ context.Context) ([]Device, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	devices := make([]Device, 0, len(s.devices))
+	for _, d := range s.devices {
+		devices = append(devices, d)
+	}
+	return devices, nil
+}
+
 // saveLocked writes the current device map to disk atomically: it writes
 // to a temp file in the same directory and renames it into place. Callers
 // must hold s.mu.

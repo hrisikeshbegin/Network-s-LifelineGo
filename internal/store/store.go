@@ -35,4 +35,7 @@ type Store interface {
 	// UpdateHeartbeat records a heartbeat for the device with the given ID,
 	// setting its status and last-seen timestamp.
 	UpdateHeartbeat(ctx context.Context, id string, status Status, seenAt time.Time) error
+
+	// ListDevices returns all known devices.
+	ListDevices(ctx context.Context) ([]Device, error)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -12,11 +13,13 @@ import (
 	"github.com/hrisikeshbegin/go-network-lifeline/internal/config"
 	"github.com/hrisikeshbegin/go-network-lifeline/internal/discovery"
 	"github.com/hrisikeshbegin/go-network-lifeline/internal/store"
+	"github.com/hrisikeshbegin/go-network-lifeline/internal/web"
 )
 
 const (
 	devicesFile          = "./devices.json"
 	pingSweepConcurrency = 50
+	webAddr              = ":8080"
 )
 
 func main() {
@@ -30,6 +33,21 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	webServer := &http.Server{Addr: webAddr, Handler: web.NewHandler(st)}
+	go func() {
+		log.Printf("dashboard listening on http://localhost%s", webAddr)
+		if err := webServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("dashboard server error: %v", err)
+		}
+	}()
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := webServer.Shutdown(shutdownCtx); err != nil {
+			log.Printf("dashboard shutdown: %v", err)
+		}
+	}()
 
 	netInfo, err := discovery.LocalNetworkInfo()
 	if err != nil {
