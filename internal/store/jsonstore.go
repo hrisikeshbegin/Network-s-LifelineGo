@@ -49,12 +49,12 @@ func NewJSONStore(path string) (*JSONStore, error) {
 }
 
 // UpsertDevice inserts a new device or updates an existing one matched by
-// device.ID, preserving its original FirstSeen if it already had one.
+// device.ID, always preserving its original FirstSeen once set.
 func (s *JSONStore) UpsertDevice(_ context.Context, device Device) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if existing, ok := s.devices[device.ID]; ok && device.FirstSeen.IsZero() {
+	if existing, ok := s.devices[device.ID]; ok {
 		device.FirstSeen = existing.FirstSeen
 	}
 
